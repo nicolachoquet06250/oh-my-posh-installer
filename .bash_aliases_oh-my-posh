@@ -36,13 +36,16 @@ function oh-my-posh-installer() {
 
   function help() {
     commands_lines=(
-      "${ALIAS} install [--no-themes|-nt]"
-      "⬆️  (alias) ${ALIAS} i [--no-themes|-nt]"
+      "${ALIAS} install [--no-themes|-nt] [--theme|-t <theme-name>]"
+      "⬆️  (alias) ${ALIAS} i [--no-themes|-nt] [--theme|-t <theme-name>]"
       ""
       "${ALIAS} update [--with-themes|-wt]"
       "⬆️  (alias) ${ALIAS} u [--no-themes|-nt]"
       ""
-      "${ALIAS} clone-conf --config|-c <config_name> --output|-o <output_config_name>"
+      "${ALIAS} conf:clone --config|-c <config_name> --output|-o <output_config_name>"
+      "⬆️  (alias) ${ALIAS} cc --config|-c <config_name> --output|-o <output_config_name>"
+      ""
+      "${ALIAS} conf:change --config|-c <config_name> [--yes|--oui|-y|-o]"
       "⬆️  (alias) ${ALIAS} cc --config|-c <config_name> --output|-o <output_config_name>"
       ""
       "${ALIAS} official-site"
@@ -77,12 +80,17 @@ function oh-my-posh-installer() {
       rm -rf "${HOME}/.poshthemes/themes.zip"
 
       final_message+="avec ses thèmes "
+
+      theme="$(flag "theme" "t")"
+      chosen_theme="jandedobbeleer"
+      if [[ "${theme}" != false ]] && [[ -f "${HOME}/.poshthemes/${theme}.omp.json" ]];then
+        chosen_theme="${theme}"
+      fi
+
+      # shellcheck disable=SC2016
+      echo "eval \"$\(oh-my-posh init bash --config ~/.poshthemes/${chosen_theme}.omp.json)\"" >> "${HOME}/.bashrc"
+      source "${HOME}/.bashrc"
     fi
-
-    echo "
-eval \"\$(oh-my-posh init bash --config ~/jandedobbeleer.omp.json)\"" >> "${HOME}/.bashrc"
-
-    source "${HOME}/.bashrc"
 
     framework_success_message "${final_message}!"
     framework_warning_message "Vous devez installer $(framework_link "https://www.nerdfonts.com/font-downloads" "une font avec des icons") puis l'installer sur votre/vos terminal/aux"
@@ -111,7 +119,7 @@ eval \"\$(oh-my-posh init bash --config ~/jandedobbeleer.omp.json)\"" >> "${HOME
   }
   eval "$(framework_sub_command -n "update" -s "u")"
 
-  function clone-conf() {
+  function conf_clone() {
     config="$(flag "config" "c")"
     output="$(flag "output" "o")"
 
@@ -120,7 +128,7 @@ eval \"\$(oh-my-posh init bash --config ~/jandedobbeleer.omp.json)\"" >> "${HOME
     framework_success_message "La config $(framework_link "${HOME}/.poshthemes/${config}.omp.json" "${HOME}/.poshthemes/${config}.omp.json") à été cloné avec le nom $(framework_link "${HOME}/.${output}.omp.json" "${HOME}/.${output}.omp.json")"
     framework_warning_message "Pour customiser votre config, aller sur $(framework_link "https://ohmyposh.dev/docs/configuration/general" "la doc")"
   }
-  eval "$(framework_sub_command -n "clone-conf" -s "cc")"
+  eval "$(framework_sub_command -n "conf:clone" -s "cc")"
 
   function official-site() {
     framework_link "https://ohmyposh.dev/"
@@ -141,6 +149,52 @@ eval \"\$(oh-my-posh init bash --config ~/jandedobbeleer.omp.json)\"" >> "${HOME
     done
   }
   eval "$(framework_sub_command -n "docs" -s "d")"
+
+  function conf_change() {
+    new_config="$(flag "config" "c")"
+    no_interaction="$(flag "yes" "y")"
+    no_interactionfr="$(flag "oui" "o")"
+
+    if [[ "${new_config}" != "false" ]];then
+      file_path="${HOME}/.poshthemes/${new_config}.omp.json"
+      if [[ "${new_config}" =~ "/" ]];then
+        file_path="${new_config}.omp.json"
+      fi
+
+      if [[ ! -f "${file_path}" ]];then
+        framework_error_message "Le fichier de config ${file_path}"
+        return
+      fi
+
+      if [[ "${no_interaction}" == "false" ]] && [[ "${no_interactionfr}" == "false" ]];then
+        read -p "Voulez-vous vraiment passer sur la configuration ${new_config} ? [oui|non] " response;
+
+        if {
+          [[ "${response}" != "oui" ]] &&
+          [[ "${response}" != "o" ]] &&
+          [[ "${response}" != "yes" ]] &&
+          [[ "${response}" != "y" ]]
+        };then
+          return
+        fi
+      fi
+
+      original_string="$(cat ~/.bashrc)"
+
+      final_config=${new_config//\./"\\."}
+      if [[ "${final_config}" =~ "/" ]];then
+        final_config=${final_config//\//"\\/"}
+
+        modified_string="$(echo "$original_string" | sed -E "s/~\/([a-zA-Z\.\/]+\/)?[a-zA-Z\.]+\.omp\.json/${final_config}\.omp\.json/")"
+      else
+        modified_string="$(echo "$original_string" | sed -E "s/~\/([a-zA-Z\.\/]+\/)?[a-zA-Z\.]+\.omp\.json/~\/\.poshthemes\/${final_config}\.omp\.json/")"
+      fi
+
+      echo "$modified_string" > "${HOME}/.bashrc"
+      source "${HOME}/.bashrc"
+    fi
+  }
+  eval "$(framework_sub_command -n "conf:change")"
 
   eval "$(framework_run --with-help)"
 }

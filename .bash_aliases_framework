@@ -91,7 +91,7 @@ function framework_run_command() {
 
     \$command \"\${args[@]}\"
   else"
-  if [[ "${error}" != false ]];then
+  if [[ "${error}" == false ]];then
     echo "  framework_error_message \"command \\\"\${FUNCNAME[0]} \${chosen_command}\\\" not found\""
   else
     echo "  framework_error_message \"${error}\""
