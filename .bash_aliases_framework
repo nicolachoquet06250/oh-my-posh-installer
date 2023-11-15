@@ -225,7 +225,6 @@ function framework_title() {
 
   if [[ "${SUDO_PASSWD}" == "" ]];then
     framework_error_message "La variable d'environement \"SUDO_PASSWD\" doit être définie";
-
     return;
   fi
 
@@ -290,6 +289,10 @@ function framework_title() {
   if [[ "$(flag "space-bottom" "sb")" == true ]];then
     echo ""
   fi
+}
+
+function framework_figlet_font_path() {
+  echo "https://unpkg.com/figlet@1.4.0/fonts/${1^}.flf"
 }
 
 function framework_max_str_width() {

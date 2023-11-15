@@ -22,9 +22,12 @@ function oh-my-posh-installer() {
 
   function logo() {
     title="Oh My Posh"
-    title_font_family="https://unpkg.com/figlet@1.4.0/fonts/Big.flf"
+    title_font_family="$(framework_figlet_font_path "big")"
+    subtitle="Installer"
+    subtitle_font_family="$(framework_figlet_font_path "fuzzy")"
 
-    framework_title --text "${title}" --font "${title_font_family}" --line_prefix "  " -st -sb
+    framework_title --text "${title}" --font "${title_font_family}" --line_prefix "  " -st
+    framework_title --text "${subtitle}" --font "${subtitle_font_family}" --line_prefix "  " -sb
   }
 
   logo
