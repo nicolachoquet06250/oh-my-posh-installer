@@ -161,9 +161,6 @@ function framework_format() {
     declare -A formats=(
       ['weight']="\e[1m"
       ['underline']="\e[4m"
-      ['flashlight']="\e[5m"
-      ['color-reverse']="\e[7m"
-      ['hidden']="\e[8m"
     )
 
     declare -A colors=(
@@ -379,4 +376,134 @@ function framework_run() {
     eval \"\$(framework_run_command)\"
     "
   fi
+}
+
+function framework() {
+  eval "$(framework_flag)"
+
+  function logo() {
+    title="Framework"
+    title_font_family="block"
+    framework_title --text "${title}" --font "${title_font_family}" --line_prefix "  " -st
+  }
+
+  logo
+
+  function help() {
+    commands_lines=(
+      "framework_flag"
+      "➡️  Génère une fonction `flag` avec la signature suivante : flag \"nom long\" \"nom court optionel\""
+      ""
+      "framework_command_checker [--with-help]"
+      "➡️  Génère le code bash permétant de vérifier que le sous alias saisis est valide est à été déclaré"
+      ""
+      "framework_generate_shorts_commands"
+      "➡️  Génère les fonctions de l'alias short en fonction de la fonction de l'alias long."
+      ""
+      "framework_success_message \"message\""
+      "➡️  Affiche un message avec un tick vert devant"
+      ""
+      "framework_is_success_message \"message\""
+      "➡️  Vérifie que le message à pour premier charactère un tick vert"
+      ""
+      "framework_warning_message \"message\""
+      "➡️  Affiche un message avec un panneau attention orange devant"
+      ""
+      "framework_is_warning_message \"message\""
+      "➡️  Vérifie que le message à pour premier charactère un panneau attention orange"
+      ""
+      "framework_error_message \"message\""
+      "➡️  Affiche un message avec une croix rouge devant"
+      ""
+      "framework_is_error_message \"message\""
+      "➡️  Vérifie que le message à pour premier charactère une croix rouge"
+      ""
+      "framework_generate_doc reference_de_tableau"
+      "➡️  Mise en forme d'une liste destiné à de la documentation"
+      ""
+      "framework_link \"url|local_path\" \"label\""
+      "➡️  Formatte le texte pour qu'il soit clickable via ctrl+click avec une url ou un chemin local donné."
+      ""
+      "framework_format --text|-t content [--underline] [--weight] [--color|-c \"default|black|white|red|lightred|green|lightgreen|yellow|lightyellow|blue|lightblue|purple|lightpurple|cyan|lightcyan|gray|lightgray|darkgray\"]"
+      ""
+      "framework_figlet_font_path \"font_name\""
+      "➡️  Génère l'url de téléchargement d'une font figlet via sont nom"
+      ""
+      "framework_max_str_width \"multilines_str\""
+      "➡️  Donne la largeur maximal d'une chaine multi-lignes"
+      ""
+      "framework_sub_command --name|-n sub_command_name --short|-s short_sub_command_name"
+      "➡️  Cette fonction est appelé après la définition d'une fonction que l'on utilisera en sous alias"
+      "➡️  Les caractères \":\" dans l'alias seront remplacés par \"_\" dans le nom de la fonction et dans le nom du short."
+      ""
+      "framework_run [--with-help] [--error|-err \"error message\"]"
+      "➡️  Lance les fonctions suivantes de manière regroupées dans cet ordre :"
+      "  1. framework_generate_shorts_commands"
+      "  2. framework_command_checker [--with-help]"
+      "  3. framework_run_command [--error default=\"\"command \\\"alwaysdata \${chosen_command}\\\" not found\"\"]"
+      ""
+      "framework tools:sites:list"
+      "⬆️  framework tools:s:l"
+    )
+
+    create-help-sub-command "framework" "${commands_lines[@]}"
+  }
+  eval "$(framework_sub_command -n "help")"
+
+  function tools_sites_list() {
+    list=(
+      "- Figlet"
+      "Liste des fonts=https://devhints.io/figlet"
+    )
+
+    framework_warning_message "$(framework_format --weight -t "La liste ci-dessous est clickable (ctrl-click)")"
+    echo ""
+
+    window_length=$(tput cols)
+    cmp=0
+    for line in "${list[@]}";do
+      if [[ "${line:0:2}" == "- " ]];then
+        [[ $cmp -gt 0 ]] && echo ""
+        width=80
+        [[ 80 -gt $window_length ]] && width=$window_length
+
+        left="|= "
+        right=" =|"
+
+        title="$(framework_format --underline -t "${line:2:$((${#line} - 2))}")"
+
+        left_limit=$((((width / 2) - (${#title} / 2)) - 1))
+        [[ ! "$(echo "scale=2; ${#title}/2" | bc)" =~ .5 ]] && left_limit=$((left_limit+1))
+
+        left_part="${left}"
+        for ((i=0; i<left_limit;i++));do
+          left_part+="="
+        done
+
+        right_part=""
+        for ((i=0; i<$((((width / 2) - (${#title} / 2)) - 1));i++));do
+          right_part+="="
+        done
+        right_part+="${right}"
+
+        echo "${left_part} $(framework_format --underline -t "${line:2:$((${#line} - 2))}") ${right_part}"
+        echo ""
+        continue
+      fi
+
+      if [[ "${line}" =~ "=" ]];then
+        IFS=$'='
+        read -rd '' -a parts <<<"${line}"
+        echo -n " • $(framework_link "${parts[1]}" "$(framework_format --underline -t "${parts[0]}")")"
+        echo ""
+      else
+        echo -n " • $(framework_link "${line}")"
+      fi
+
+      cmp=$((cmp+1))
+    done
+  }
+  eval "$(framework_sub_command -n "tools:sites:list" -s "tools:s:l")"
+
+  eval "$(framework_run --with-help)"
 }

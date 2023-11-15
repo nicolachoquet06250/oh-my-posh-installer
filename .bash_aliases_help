@@ -78,10 +78,11 @@ function create-help-sub-command() {
 
 #   Body drawing
     for ((i=0; i<$(( ${#commands_lines[*]} )); i++));do
-      line_width=${#commands_lines[$i]}
+      line="${commands_lines[$i]}"
+      line_width=${#line}
 
       start_with_emoji=0
-      if [[ "${commands_lines[$i]:0:3}" =~ "⬆️" ]];then
+      if [[ "${line:0:3}" =~ "⬆️" ]] || [[ "${line:0:2}" == "➡️" ]];then
         start_with_emoji=1
         line_width=$((line_width+1))
       fi
@@ -92,7 +93,7 @@ function create-help-sub-command() {
     	    split_line=()
     	    index=0
     	    last_limit=$real_width
-    	    
+
     	    for (( l=0; l<${#line}; l++ ));do
               char="${line:$l:1}"
               split_line[$index]="${split_line[$index]}$char"
@@ -102,13 +103,13 @@ function create-help-sub-command() {
                   last_limit=$(( last_limit + real_width ))
               fi
     	    done
-    	    
+
     	    for (( line_index=0; line_index<${#split_line[*]}; line_index++ ));do
     	        str=""
               for ((j=0; j<$(( ((${#split_line[$line_index]} - real_width) * -1) - 1 )); j++));do
-                str="$str ";
+                str+=" ";
               done
-              [[ "${split_line[$line_index]:0:3}" =~ "⬆️" ]] && str+=" "
+              [[ "${split_line[$line_index]:0:3}" =~ "⬆️" ]] || [[ "${split_line[$line_index]:0:3}" =~ "➡️" ]] && str+=" "
 
     	        echo "${extrem_start}${split_line[$line_index]} ${str}${extrem_stop}"
     	    done
