@@ -1,0 +1,146 @@
+#!/bin/bash
+
+if [[ "${ALIASES_FRAMEWORK_DEFINED}" == "" ]];then
+  source "$(pwd)/.bash_aliases_framework"
+fi
+
+if [[ "${CREATE_HELP_SUB_COMMAND_DEFINED=1}" == "" ]];then
+  source "$(pwd)/.bash_aliases_help"
+fi
+
+function oh-my-posh-installer() {
+  ALIAS="oh-my-posh-installer"
+
+  if [[ "${ALIASES_FRAMEWORK_DEFINED}" == "" ]];then
+    echo ""
+    echo "❌ Le framework d'aliases n'est pas importé !"
+    echo ""
+    return
+  fi
+
+  eval "$(framework_flag)"
+
+  function logo() {
+    title="Oh My Posh"
+    title_font_family="https://unpkg.com/figlet@1.4.0/fonts/Big.flf"
+
+    framework_title --text "${title}" --font "${title_font_family}" --line_prefix "  " -st -sb
+  }
+
+  logo
+
+  if [[ "${SUDO_PASSWD}" == "" ]];then
+    echo "❌ La variable d'environement \"SUDO_PASSWD\" doit être définie";
+    return;
+  fi
+
+  function help() {
+    commands_lines=(
+      "${ALIAS} install [--no-themes|-nt]"
+      "⬆️  (alias) ${ALIAS} i [--no-themes|-nt]"
+      ""
+      "${ALIAS} update [--no-themes|-nt]"
+      "⬆️  (alias) ${ALIAS} u [--no-themes|-nt]"
+      ""
+      "${ALIAS} clone-conf --config|-c <config_name> --output|-o <output_config_name>"
+      "⬆️  (alias) ${ALIAS} cc --config|-c <config_name> --output|-o <output_config_name>"
+      ""
+      "${ALIAS} official-site"
+      "⬆️  (alias) ${ALIAS} os"
+      ""
+      "${ALIAS} docs"
+      "⬆️  (alias) ${ALIAS} d"
+    )
+
+    create-help-sub-command "${ALIAS}" "${commands_lines[@]}"
+  }
+  eval "$(framework_sub_command -n "help")"
+
+  function get_binary() {
+    echo "${SUDO_PASSWD}" | sudo -S wget --no-verbose -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+    echo "${SUDO_PASSWD}" | sudo -S chmod +x /usr/local/bin/oh-my-posh
+  }
+
+  function install() {
+    get_binary;
+
+    final_message="Oh My Posh a bien été installé "
+
+    if [[ "$(flag "no-themes" "nt")" == true ]];then
+      if [[ ! -d "${HOME}/.poshthemes" ]];then
+        mkdir "${HOME}/.poshthemes"
+      fi
+
+      wget  --no-verbose -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O "${HOME}/.poshthemes/themes.zip"
+      unzip "${HOME}/.poshthemes/themes.zip" -d "${HOME}/.poshthemes"
+      sudo chmod u+rw "${HOME}/.poshthemes/*.json"
+      rm -rf "${HOME}/.poshthemes/themes.zip"
+
+      final_message+="avec ses thèmes "
+    fi
+
+    echo "
+eval \"\$(oh-my-posh init bash --config ~/jandedobbeleer.omp.json)\"" >> "${HOME}/.bashrc"
+
+    source "${HOME}/.bashrc"
+
+    framework_success_message "${final_message}!"
+    framework_warning_message "Vous devez installer $(framework_link "https://www.nerdfonts.com/font-downloads" "une font avec des icons") puis l'installer sur votre/vos terminal/aux"
+  }
+  eval "$(framework_sub_command -n "install" -s "i")"
+
+  function update() {
+    get_binary;
+
+    final_message="Oh My Posh a bien été mis à jour "
+
+    if [[ "$(flag "no-themes" "nt")" == true ]];then
+      if [[ ! -d "${HOME}/.poshthemes" ]];then
+        mkdir "${HOME}/.poshthemes"
+      fi
+
+      wget  --no-verbose -q --show-progress https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O "${HOME}/.poshthemes/themes.zip"
+      unzip "${HOME}/.poshthemes/themes.zip" -d "${HOME}/.poshthemes"
+      sudo chmod u+rw "${HOME}/.poshthemes/*.json"
+      rm -rf "${HOME}/.poshthemes/themes.zip"
+
+      final_message+="avec ses thèmes "
+    fi
+
+    framework_success_message "${final_message}!"
+  }
+  eval "$(framework_sub_command -n "update" -s "u")"
+
+  function clone-conf() {
+    config="$(flag "config" "c")"
+    output="$(flag "output" "o")"
+
+    oh-my-posh config export --config "${HOME}/.poshthemes/${config}.omp.json" --output "${HOME}/.${output}.omp.json"
+
+    framework_success_message "La config $(framework_link "${HOME}/.poshthemes/${config}.omp.json" "${HOME}/.poshthemes/${config}.omp.json") à été cloné avec le nom $(framework_link "${HOME}/.${output}.omp.json" "${HOME}/.${output}.omp.json")"
+    framework_warning_message "Pour customiser votre config, aller sur $(framework_link "https://ohmyposh.dev/docs/configuration/general" "la doc")"
+  }
+  eval "$(framework_sub_command -n "clone-conf" -s "cc")"
+
+  function official-site() {
+    framework_link "https://ohmyposh.dev/"
+  }
+  eval "$(framework_sub_command -n "official-site" -s "os")"
+
+  function docs() {
+    declare -A docs_list=(
+      ['Changer de prompt']="https://ohmyposh.dev/docs/installation/prompt"
+      ['Customiser la config visuel']="https://ohmyposh.dev/docs/installation/customize#config-syntax"
+      ['Documentation des configurations']="https://ohmyposh.dev/docs/configuration/general"
+      ['Liste des themes']="https://ohmyposh.dev/docs/themes"
+      ['Contribuer']="https://ohmyposh.dev/docs/contributing/started"
+    )
+
+    for label in "${!docs_list[@]}";do
+      echo " • $(framework_link "${docs_list["${label}"]}" "${label}")"
+    done
+  }
+  eval "$(framework_sub_command -n "docs" -s "d")"
+
+  eval "$(framework_run --with-help)"
+}

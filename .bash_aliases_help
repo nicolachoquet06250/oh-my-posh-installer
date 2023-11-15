@@ -1,0 +1,141 @@
+#!/bin/bash
+
+export CREATE_HELP_SUB_COMMAND_DEFINED=1
+
+function create-help-sub-command() {
+    help_lines=( "$1 help" "$1 --help" "$1 -h" "$1" )
+    shift
+    commands_lines=("$@")
+
+    width=$(($(tput cols)-1))
+
+#   Header drawing
+    middle_char="="
+    left_and_right_char="|"
+    char_left_and_right_char=" "
+
+    first_and_last_line="${left_and_right_char}"
+    for (( cmp=0; cmp<$((width - 2)); cmp++ ));do
+      first_and_last_line+="${middle_char}"
+    done
+    first_and_last_line+="${left_and_right_char}"
+
+    middle_line=""
+    for ((j=0; j<$(( width - 1 )); j++));do
+    	[ "$j" -eq 0 ] && middle_line+=" " || middle_line+="_"
+    done
+
+    function title_block() {
+        title=$1
+
+        middle_char="="
+
+        extrem_start="${left_and_right_char}${middle_char}${middle_char}${char_left_and_right_char}"
+        extrem_stop="${char_left_and_right_char}${middle_char}${middle_char}${left_and_right_char}"
+        real_width=$(( width - (${#extrem_start} * 2) ))
+
+        left_and_right_line_char_width=$(( ( width / 2 ) - ${#extrem_start} - ( ( ${#title} / 2 ) + 1 ) ))
+
+        middle_char="-"
+
+        echo $first_and_last_line
+        echo -n "${extrem_start}"
+
+        if [[ "$(echo "scale=2; ${#title}/2" | bc)" =~ .5 ]] && [[ "$(( (width - ${#title}) % 2 ))" == "1" ]];then
+          for (( cmp=0; cmp<$((left_and_right_line_char_width-1)); cmp++ ));do
+            echo -n "${middle_char}"
+          done
+        else
+          for (( cmp=0; cmp<left_and_right_line_char_width; cmp++ ));do
+            echo -n "${middle_char}"
+          done
+        fi
+
+        echo -n " ${title} "
+
+        if [[ "$(echo "scale=2; ${#title}/2" | bc)" =~ .00 ]] && [[ "$(( (width - ${#title}) % 2 ))" == "1" ]];then
+          for (( cmp=0; cmp<$((left_and_right_line_char_width+1)); cmp++ ));do
+            echo -n "${middle_char}"
+          done
+        else
+          for (( cmp=0; cmp<left_and_right_line_char_width; cmp++ ));do
+            echo -n "${middle_char}"
+          done
+        fi
+
+        echo "${extrem_stop}"
+
+        echo $first_and_last_line
+    }
+
+    extrem_start="|== "
+    extrem_stop=" ==|"
+    real_width=$(( width - (${#extrem_start} * 2) ))
+
+    echo "${middle_line}"
+    title_block "Commandes"
+#   End Header drawing
+
+#   Body drawing
+    for ((i=0; i<$(( ${#commands_lines[*]} )); i++));do
+      line_width=${#commands_lines[$i]}
+
+      start_with_emoji=0
+      if [[ "${commands_lines[$i]:0:3}" =~ "⬆️" ]];then
+        start_with_emoji=1
+        line_width=$((line_width+1))
+      fi
+
+    	if [ $line_width -gt $real_width ];then
+    	    line="${commands_lines[$i]}"
+    	    [[ "${start_with_emoji}" == "1" ]] && line+=" "
+    	    split_line=()
+    	    index=0
+    	    last_limit=$real_width
+    	    
+    	    for (( l=0; l<${#line}; l++ ));do
+              char="${line:$l:1}"
+              split_line[$index]="${split_line[$index]}$char"
+
+              if [ "$l" -ge $(( last_limit - 2 )) ];then
+                  index=$(( index + 1 ))
+                  last_limit=$(( last_limit + real_width ))
+              fi
+    	    done
+    	    
+    	    for (( line_index=0; line_index<${#split_line[*]}; line_index++ ));do
+    	        str=""
+              for ((j=0; j<$(( ((${#split_line[$line_index]} - real_width) * -1) - 1 )); j++));do
+                str="$str ";
+              done
+              [[ "${split_line[$line_index]:0:3}" =~ "⬆️" ]] && str+=" "
+
+    	        echo "${extrem_start}${split_line[$line_index]} ${str}${extrem_stop}"
+    	    done
+    	else
+    	    str=""
+          for ((j=0; j<$(( ( ( line_width - real_width ) * -1 ) - 1 )); j++));do
+            str+=" ";
+          done
+    	    [[ "${start_with_emoji}" == "1" ]] && str+="  "
+
+          echo "${extrem_start}${commands_lines[$i]} ${str}${extrem_stop}"
+    	fi
+    done
+#   End Body drawing
+
+#   Help drawing
+    title_block "Help"
+    for ((i=0; i<$(( ${#help_lines[*]} )); i++));do
+        str=""
+        for ((j=0; j<$(( ((${#help_lines[$i]} - real_width) * -1) - 1 )); j++)); do str="$str "; done
+
+        echo "${extrem_start}${help_lines[$i]} ${str}${extrem_stop}"
+    done
+        
+    echo $first_and_last_line
+    for ((j=0; j<$(( ${#first_and_last_line} - 1 )); j++));do
+        [ "$j" -eq 0 ] && echo -n " " || echo -n "-"
+    done
+    echo ""
+}

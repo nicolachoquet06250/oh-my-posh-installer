@@ -1,0 +1,379 @@
+#!/bin/bash
+
+# penser à mettre à jour l'alias sur git en supprimant ce commentaire
+export ALIASES_FRAMEWORK_DEFINED=1
+
+### exec `eval "$(framework_flag)"` in your alias function
+function framework_flag() {
+  echo "
+  # shellcheck disable=SC2034
+  declare -a params=(\"\${@}\")
+
+  function flag() {
+    declare -a p=(\"\${params[@]}\")
+    name=\"\$1\"
+    short_name=\"\$2\"
+    [[ \"\${short_name}\" == \"\" ]] && short_name=\"\${name:0:1}\"
+
+#      le flag exist
+    if {
+      [[ \"\${p[*]}\" =~ --\$name ]] || \
+      [[ \"\${p[*]}\" =~ -\$short_name ]]
+    };then
+      cmp=0
+      selected_value=\"false\"
+      for flag in \"\${params[@]}\";do
+        if {
+          [[ \"\${flag:0:2}\" == \"--\" ]] && \
+          [[ \"\${flag:2:\${#flag}}\" == \"\${name}\" ]]
+        } || {
+          [[ \"\${flag:0:1}\" == \"-\" ]] && \
+          [[ \"\${flag:1:\${#flag}}\" == \"\${short_name}\" ]]
+        };then
+          if {
+            [[ \"\${params[\$((cmp+1))]}\" == \"\" ]] || \
+            [[ \"\${params[\$((cmp+1))]:0:2}\" == \"--\" ]] || \
+            [[ \"\${params[\$((cmp+1))]:0:1}\" == \"-\" ]]
+          };then
+            selected_value=\"true\"
+          else
+            selected_value=\"\${params[\$((cmp+1))]}\"
+          fi
+        fi
+
+        cmp=\$((cmp+1))
+      done
+
+      echo \"\${selected_value}\"
+    else
+      echo \"false\"
+    fi
+  }
+  "
+}
+
+### you must create `commands` array in your alias function
+### and use this function like that after array declaration :
+### exec `eval "$(framework_command_checker)"`
+function framework_command_checker() {
+    eval "$(framework_flag)"
+    echo "
+    chosen_command=\"\$1\""
+    if [[ "$(flag "with-help" "wh")" != false ]];then
+      echo "
+      {
+        [ \"\$chosen_command\" == \"--help\" ] ||
+        [ \"\$chosen_command\" == \"-h\" ] ||
+        [ \"\$chosen_command\" == \"\" ]
+      } && chosen_command=\"help\""
+    fi
+    echo "
+    command_exists=0
+    for command in \"\${commands[@]}\";do
+      if [[ \"\${command}\" == \"\${chosen_command}\" ]];then
+        command_exists=1
+        break
+      fi
+    done
+    "
+}
+
+function framework_run_command() {
+  eval "$(framework_flag)"
+
+  error="$(flag "error" "err")"
+  echo "
+  command=\${chosen_command//':'/'_'}
+  if [[ \"\${command_exists}\" == \"1\" ]] && [[ \$(type -t \$command) == function ]];then
+    [[ \"\${start}\" == \"\" ]] && start=2
+    local size=+\"\${#*}\"
+    local args=(\"\${@:\$start:\$size}\")
+
+    \$command \"\${args[@]}\"
+  else"
+  if [[ "${error}" != false ]];then
+    echo "  framework_error_message \"command \\\"\${FUNCNAME[0]} \${chosen_command}\\\" not found\""
+  else
+    echo "  framework_error_message \"${error}\""
+  fi
+  echo "
+  fi
+
+  echo \"\"
+  "
+}
+
+function framework_generate_shorts_commands() {
+    echo "
+    for alias in \"\${!shorts[@]}\";do
+      eval \"function \${alias}() {
+        \${shorts[\$alias]} \\\"\\\${@}\\\"
+      }\"
+    done
+    "
+}
+
+function framework_success_message() {
+    echo "✅ $1"
+}
+
+function framework_is_success_message() {
+  [[ "${1:0:1}" == "✅" ]] && echo "true" || echo "false"
+}
+
+function framework_warning_message() {
+    echo "⚠️  $1"
+}
+
+function framework_is_warning_message() {
+  [[ "${1:0:1}" == "⚠️" ]] && echo "true" || echo "false"
+}
+
+function framework_error_message() {
+    echo "❌ $1"
+}
+
+function framework_is_error_message() {
+  [[ "${1:0:1}" == "❌" ]] && echo "true" || echo "false"
+}
+
+function framework_generate_doc() {
+    local -n list=$1
+
+    for item in "${list[@]}";do
+      echo "echo \"⬜ ${item}\""
+    done
+}
+
+function framework_link() {
+  link=$1
+  [[ "${link:0:1}" == "/" ]] && link="file://${link}"
+
+  label=$2
+  [[ "${label}" == "" ]] && label="${link}"
+
+  echo -e "\e]8;;${link}\a${label}\e]8;;\a"
+}
+
+function framework_format() {
+    eval "$(framework_flag)"
+
+    declare -A formats=(
+      ['weight']="\e[1m"
+      ['underline']="\e[4m"
+      ['flashlight']="\e[5m"
+      ['color-reverse']="\e[7m"
+      ['hidden']="\e[8m"
+    )
+
+    declare -A colors=(
+      ['default']="\e[39m"
+      ['black']="\e[30m"
+      ['red']="\e[31m"
+      ['lightred']="\e[91m"
+      ['green']="\e[32m"
+      ['lightgreen']="\e[92m"
+      ['yellow']="\e[33m"
+      ['lightyellow']="\e[93m"
+      ['blue']="\e[34m"
+      ['lightblue']="\e[94m"
+      ['mauve']="\e[35m"
+      ['lightmauve']="\e[95m"
+      ['cyan']="\e[36m"
+      ['lightcyan']="\e[96m"
+      ['gray']="\e[2m"
+      ['lightgray']="\37[1m"
+      ['darkgray']="\e[90m"
+      ['white']="\e[97m"
+    )
+
+    format_end="\e[0m"
+
+    str=""
+
+    for color in "${!colors[@]}";do
+      if [[ "$(flag "color" "c")" == "${color}" ]];then
+        str+="${colors[$color]}"
+        break
+      fi
+    done
+
+    has_min_one_format=false
+    for format in "${!formats[@]}";do
+      if [[ "$(flag "${format}")" == true ]];then
+        has_min_one_format=true
+
+        str+="${formats[$format]}"
+      fi
+    done
+
+    text="$(flag "text" "t")"
+
+    if [[ "${text}" != false ]];then
+      str+="${text}"
+    fi
+
+    if [[ $has_min_one_format == true ]];then
+      str+="${format_end}"
+    fi
+
+    echo -e "${str}"
+}
+
+function framework_title() {
+  eval "$(framework_flag)"
+
+  if [[ "${SUDO_PASSWD}" == "" ]];then
+    framework_error_message "La variable d'environement \"SUDO_PASSWD\" doit être définie";
+
+    return;
+  fi
+
+  if [[ ! -f "/usr/bin/figlet" ]];then
+#    Man of figlet : http://www.figlet.org/figlet-man.html
+    echo "${SUDO_PASSWD}" | sudo -S apt install -y figlet 2> /dev/null
+  fi
+
+  mkdir -p "${HOME}/aliases/fonts"
+
+  line_prefix="$(flag "line_prefix" "lpre")"
+  text="$(flag "text" "t")"
+#  For test fonts : https://patorjk.com/software/taag/#p=display&f=Graffiti&t=Type%20Something%20
+  font="$(flag "font" "f")"
+  if [[ "${font}" != false ]];then
+    if [[ "${font:0:8}" == "https://" ]] || [[ "${font:0:7}" == "http://" ]];then
+      IFS=$'/'
+      read -rd '' -a font_parts <<<"$font"
+      font_file="${font_parts[-1]}"
+      IFS=$'.'
+      read -rd '' -a font_file_parts <<<"$font_file"
+      font_name="${font_file_parts[0]//%20/_}"
+
+      if [[ ! -f "${HOME}/aliases/fonts/${font_name}.flf" ]];then
+        curl -s "${font}" > "${HOME}/aliases/fonts/${font_name}.flf"
+      fi
+
+      font="${font_name}"
+    elif [[ ! -f "${HOME}/aliases/fonts/${font}.flf" ]];then
+      curl -s "http://www.figlet.org/fonts/${font}.flf" > "${HOME}/aliases/fonts/${font}.flf"
+    fi
+  fi
+
+  command="figlet -w $(tput cols)"
+
+  if [[ "$(flag "center" "c")" != false ]];then
+    command+=" -c"
+  fi
+
+  if [[ "${font}" != false ]];then
+    command+=" -f ${HOME}/aliases/fonts/${font}.flf"
+  fi
+
+  command+=" \"${text}\""
+
+  if [[ "$(flag "space-top" "st")" == true ]];then
+    echo ""
+  fi
+
+  if [[ "${line_prefix}" == false ]];then
+    eval "${command}"
+  else
+    out=$(eval "${command}")
+    IFS=$'\n'
+    read -rd '' -a lines <<<"$out"
+
+    for line in "${lines[@]}";do
+      echo "${line_prefix}${line}"
+    done
+  fi
+
+  if [[ "$(flag "space-bottom" "sb")" == true ]];then
+    echo ""
+  fi
+}
+
+function framework_max_str_width() {
+    str=$1
+    IFS=$'\n'
+    read -rd '' -a lines <<<"$str"
+    max_width=0
+    for line in "${lines[@]}";do
+      if [[ ${#line} -gt $max_width ]];then
+        max_width=${#line}
+      fi
+    done
+
+    echo "${max_width}"
+}
+
+function framework_sub_command() {
+  eval "$(framework_flag)"
+
+  command="$(flag "name" "n")"
+  if [[ "${command}" == false ]];then
+    framework_error_message "Vous devez spécifier le nom !"
+    return;
+  fi
+  command_short="$(flag "short" "s")"
+
+  echo "
+  if [[ \"\${commands[@]}\" == \"\" ]];then
+    declare -a commands=()
+  fi
+
+  commands+=(\"${command}\")"
+
+  if [[ "${command_short}" != false ]];then
+    echo "  commands+=(\"${command_short}\")
+
+  if [[ \"\${shorts[@]}\" == \"\" ]];then
+    declare -A shorts=()
+  fi
+
+  shorts['${command_short//:/_}']=\"${command//:/_}\"
+    "
+  fi
+
+  func="$(flag "func" "f")"
+  if [[ "${func}" != false ]];then
+    regex="function ([a-zA-Z_0-9-]+)\(\) \{.*\}"
+    if [[ $func =~ $regex ]]; then
+      eval "${func}"
+    else
+      eval "
+      function ${command//:/_}() {
+        ${func}
+      }
+      "
+    fi
+  fi
+}
+
+function framework_run() {
+  eval "$(framework_flag)"
+
+  echo "
+  eval \"\$(framework_generate_shorts_commands)\"
+  "
+
+  if [[ "$(flag "with-help" "wh")" == true ]];then
+    echo "
+    eval \"\$(framework_command_checker --with-help)\"
+    "
+  else
+    echo "
+    eval \"\$(framework_command_checker)\"
+    "
+  fi
+
+  if [[ "$(flag "error" "err")" != false ]];then
+    echo "
+    eval \"\$(framework_run_command --error \"$(flag "error" "err")\")\"
+    "
+  else
+    echo "
+  #  Message d'erreur par default : \"command \\\"alwaysdata \${chosen_command}\\\" not found\"
+    eval \"\$(framework_run_command)\"
+    "
+  fi
+}
