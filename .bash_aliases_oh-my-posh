@@ -39,7 +39,7 @@ function oh-my-posh-installer() {
       "${ALIAS} install [--no-themes|-nt]"
       "⬆️  (alias) ${ALIAS} i [--no-themes|-nt]"
       ""
-      "${ALIAS} update [--no-themes|-nt]"
+      "${ALIAS} update [--with-themes|-wt]"
       "⬆️  (alias) ${ALIAS} u [--no-themes|-nt]"
       ""
       "${ALIAS} clone-conf --config|-c <config_name> --output|-o <output_config_name>"
@@ -66,7 +66,7 @@ function oh-my-posh-installer() {
 
     final_message="Oh My Posh a bien été installé "
 
-    if [[ "$(flag "no-themes" "nt")" == true ]];then
+    if [[ "$(flag "no-themes" "nt")" == false ]];then
       if [[ ! -d "${HOME}/.poshthemes" ]];then
         mkdir "${HOME}/.poshthemes"
       fi
@@ -94,7 +94,7 @@ eval \"\$(oh-my-posh init bash --config ~/jandedobbeleer.omp.json)\"" >> "${HOME
 
     final_message="Oh My Posh a bien été mis à jour "
 
-    if [[ "$(flag "no-themes" "nt")" == true ]];then
+    if [[ "$(flag "with-themes" "wt")" == true ]];then
       if [[ ! -d "${HOME}/.poshthemes" ]];then
         mkdir "${HOME}/.poshthemes"
       fi
