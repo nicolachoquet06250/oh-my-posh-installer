@@ -5,7 +5,7 @@ echo "$(pwd)"
 if {
 #  [[ "$(type framework 2>&1)" =~ "non trouvé" ]] ||
 #  [[ "$(type framework 2>&1)" =~ "not found" ]] ||
-  [[ ! -f "$(pwd)/bash-aliases-framework" ]]
+  [[ ! -d "$(pwd)/bash-aliases-framework" ]]
 };then
   git clone git@github.com:nicolachoquet06250/bash-aliases-framework.git
 fi
