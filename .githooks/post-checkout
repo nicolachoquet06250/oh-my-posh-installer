@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "$(pwd)"
+
 if {
   [[ "$(type framework 2>&1)" =~ "non trouvé" ]] ||
   [[ "$(type framework 2>&1)" =~ "not found" ]] ||
