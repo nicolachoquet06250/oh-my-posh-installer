@@ -1,19 +1,12 @@
 #!/bin/bash
 
-if [[ "${ALIASES_FRAMEWORK_DEFINED}" == "" ]];then
-  source "$(pwd)/.bash_aliases_framework"
-fi
-
-if [[ "${CREATE_HELP_SUB_COMMAND_DEFINED=1}" == "" ]];then
-  source "$(pwd)/.bash_aliases_help"
-fi
-
 function oh-my-posh-installer() {
   ALIAS="oh-my-posh-installer"
 
   if [[ "${ALIASES_FRAMEWORK_DEFINED}" == "" ]];then
     echo ""
     echo "❌ Le framework d'aliases n'est pas importé !"
+    echo -e "\e]8;;https://github.com/nicolachoquet06250/bash-aliases-framework;https://github.com/nicolachoquet06250/bash-aliases-framework\e]8;;\a"
     echo ""
     return
   fi
@@ -58,7 +51,7 @@ function oh-my-posh-installer() {
       "⬆️  (alias) ${ALIAS} d"
     )
 
-    create-help-sub-command "${ALIAS}" "${commands_lines[@]}"
+    framework_create_help "${ALIAS}" "${commands_lines[@]}"
   }
   eval "$(framework_sub_command -n "help")"
 

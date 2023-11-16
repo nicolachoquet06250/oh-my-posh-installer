@@ -1,15 +1,27 @@
 #!/bin/bash
 
+if {
+  [[ "$(type framework 2>&1)" =~ "non trouvé" ]] ||
+  [[ "$(type framework 2>&1)" =~ "not found" ]]
+};then
+  git clone git@github.com:nicolachoquet06250/bash-aliases-framework.git
+fi
+
 if [[ ! -d "${HOME}/.oh-my-posh-installer" ]];then
   ln -s "$(pwd)" "${HOME}/.oh-my-posh-installer";
 fi
 
-source_1="source \"\${HOME}/.oh-my-posh-installer/.bash_aliases_oh-my-posh\""
-source_2="source \"~/.oh-my-posh-installer/.bash_aliases_oh-my-posh\""
+file_path=".oh-my-posh-installer/.bash_aliases_oh-my-posh"
+
+source_1="source \"\${HOME}/${file_path}\""
+source_2="source \"~/${file_path}\""
+
+bash_aliases_path="${HOME}/.bash_aliases"
+bash_aliases_content="$(cat "${bash_aliases_path}")"
 
 if {
-  [[ ! "$(cat "${HOME}/.bash_aliases")" =~ $source_1 ]] &&
-  [[ ! "$(cat "${HOME}/.bash_aliases")" =~ $source_2 ]]
+  [[ ! "${bash_aliases_content}" =~ $source_1 ]] &&
+  [[ ! "${bash_aliases_content}" =~ $source_2 ]]
 };then
-  echo "source \"\${HOME}/.oh-my-posh-installer/.bash_aliases_oh-my-posh\"" >> "${HOME}/.bash_aliases"
+  echo "source \"\${HOME}/${file_path}\"" >> "${bash_aliases_path}"
 fi
