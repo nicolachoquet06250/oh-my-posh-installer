@@ -1,21 +1,15 @@
 #!/bin/bash
 
-if {
-#  [[ "$(type framework 2>&1)" =~ "non trouvé" ]] ||
-#  [[ "$(type framework 2>&1)" =~ "not found" ]] ||
-  [[ ! -d "$(pwd)/bash-aliases-framework" ]]
-};then
+if [[ ! -d "$(pwd)/bash-aliases-framework" ]];then
   git clone git@github.com:nicolachoquet06250/bash-aliases-framework.git
-  if {
-      [[ -f "$(pwd)/bash-aliases-framework/.githooks/post-checkout" ]] &&
-      [[ ! -f "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout" ]]
-  };then
-    ln -s "$(pwd)/bash-aliases-framework/.githooks/post-checkout" "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout"
-  fi
-
-  # shellcheck disable=SC1090
-  . "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout" "install-script"
 fi
+
+rm -rf "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout"
+ln -s "$(pwd)/bash-aliases-framework/.githooks/post-checkout" "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout"
+echo "${SUDO_PASSWD}" | sudo -S chmod +x "$(pwd)/bash-aliases-framework/.githooks/post-checkout"
+
+# shellcheck disable=SC1090
+. "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout" "install-script"
 
 if [[ ! -d "${HOME}/.oh-my-posh-installer" ]];then
   path=""
@@ -28,14 +22,11 @@ fi
 file_path=".oh-my-posh-installer/.bash_aliases_oh-my-posh"
 
 source_1="source \"\${HOME}/${file_path}\""
-source_2="source \"~/${file_path}\""
 
 bash_aliases_path="${HOME}/.bash_aliases"
-bash_aliases_content="$(cat "${bash_aliases_path}")"
 
-if {
-  [[ ! "${bash_aliases_content}" =~ $source_1 ]] &&
-  [[ ! "${bash_aliases_content}" =~ $source_2 ]]
-};then
-  echo "source \"\${HOME}/${file_path}\"" >> "${bash_aliases_path}"
-fi
+file_content="$(cat "${bash_aliases_path}")"
+IFS=$'\n'
+read -rd '' -a lines <<<"${file_content}"
+
+[[ "${lines[*]}" != *"$source_1"* ]] && echo "source \"\${HOME}/${file_path}\"" >> "${bash_aliases_path}" || echo "" >> /dev/null
