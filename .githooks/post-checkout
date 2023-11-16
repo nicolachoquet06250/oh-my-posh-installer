@@ -8,6 +8,15 @@ if {
   [[ ! -d "$(pwd)/bash-aliases-framework" ]]
 };then
   git clone git@github.com:nicolachoquet06250/bash-aliases-framework.git
+  if {
+      [[ -f "$(pwd)/bash-aliases-framework/.githooks/post-checkout" ]] &&
+      [[ ! -f "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout" ]]
+  };then
+    ln -s "$(pwd)/bash-aliases-framework/.githooks/post-checkout" "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout"
+  fi
+
+  # shellcheck disable=SC1090
+  . "$(pwd)/bash-aliases-framework/.git/hooks/post-checkout" "install-script"
 fi
 
 if [[ ! -d "${HOME}/.oh-my-posh-installer" ]];then
