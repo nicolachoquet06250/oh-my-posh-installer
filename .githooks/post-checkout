@@ -8,7 +8,11 @@ if {
 fi
 
 if [[ ! -d "${HOME}/.oh-my-posh-installer" ]];then
-  ln -s "$(pwd)" "${HOME}/.oh-my-posh-installer";
+  path=""
+  if [[ "$1" == "install-script" ]];then
+    path="/oh-my-posh-installer"
+  fi
+  ln -s "$(pwd)${path}" "${HOME}/.oh-my-posh-installer";
 fi
 
 file_path=".oh-my-posh-installer/.bash_aliases_oh-my-posh"
