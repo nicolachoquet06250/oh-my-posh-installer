@@ -20,13 +20,13 @@ if [[ ! -d "${HOME}/.oh-my-posh-installer" ]];then
 fi
 
 file_path=".oh-my-posh-installer/.bash_aliases_oh-my-posh"
-
-source_1="source \"\${HOME}/${file_path}\""
-
+source="source \"\${HOME}/${file_path}\""
 bash_aliases_path="${HOME}/.bash_aliases"
 
 file_content="$(cat "${bash_aliases_path}")"
 IFS=$'\n'
 read -rd '' -a lines <<<"${file_content}"
 
-[[ "${lines[*]}" != *"$source_1"* ]] && echo "source \"\${HOME}/${file_path}\"" >> "${bash_aliases_path}" || echo "" >> /dev/null
+if [[ "${lines[*]}" != *"$source"* ]];then
+  echo "source \"\${HOME}/${file_path}\"" >> "${bash_aliases_path}"
+fi
